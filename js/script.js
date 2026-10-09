@@ -278,7 +278,7 @@
   });
 
   /* ---------- cursor-tracked highlight on glass cards ---------- */
-  var spotlightCards = document.querySelectorAll(".dest-card, .journey, .voice");
+  var spotlightCards = document.querySelectorAll(".dest-card, .journey, .voice, .planner, .note-card");
 
   if (!reduceMotion && window.matchMedia("(hover: hover)").matches) {
     spotlightCards.forEach(function (card) {
@@ -287,6 +287,116 @@
         card.style.setProperty("--mx", ((event.clientX - box.left) / box.width) * 100 + "%");
         card.style.setProperty("--my", ((event.clientY - box.top) / box.height) * 100 + "%");
       });
+    });
+  }
+
+  /* ---------- when to go: month rail ---------- */
+  var WHEN = {
+    europe: {
+      prime: [5, 6, 9],
+      shoulder: [4, 7, 10],
+      note: "May, June and September carry the same light as July with half the crowd. August is the one month we would steer you around, unless you are booked for a specific coast."
+    },
+    asia: {
+      prime: [3, 11],
+      shoulder: [2, 4, 10, 12],
+      note: "March for blossom and November for dry, clear air. Skip Golden Week in early May and the rainy weeks from mid-June. The Indian Ocean runs later than you would think."
+    },
+    americas: {
+      prime: [1, 2, 3, 11],
+      shoulder: [4, 9, 10, 12],
+      note: "Patagonia and the high Andes want the southern summer. Banff and the Rockies flip it — July to September, when the high passes finally open."
+    },
+    africa: {
+      prime: [2, 3, 10, 11],
+      shoulder: [4, 9, 12],
+      note: "Cool, dry months for the desert and the Atlas passes. July and August belong to the coast and the islands, not the interior."
+    }
+  };
+
+  var WHEN_LABELS = { prime: "Prime", shoulder: "Shoulder", off: "Off-season" };
+  var monthRail = document.getElementById("monthRail");
+  var whenSummary = document.getElementById("whenSummary");
+  var whenChips = document.querySelectorAll("[data-when]");
+
+  function paintMonths(region) {
+    var data = WHEN[region];
+    if (!data || !monthRail) return;
+
+    monthRail.querySelectorAll(".month").forEach(function (month) {
+      var index = parseInt(month.dataset.month, 10);
+      var state =
+        data.prime.indexOf(index) > -1
+          ? "prime"
+          : data.shoulder.indexOf(index) > -1
+            ? "shoulder"
+            : "off";
+
+      month.classList.remove("is-prime", "is-shoulder", "is-off");
+      month.classList.add("is-" + state);
+
+      var badge = month.querySelector(".month-badge");
+      if (badge) badge.textContent = WHEN_LABELS[state];
+    });
+
+    if (whenSummary) whenSummary.textContent = data.note;
+
+    whenChips.forEach(function (chip) {
+      chip.classList.toggle("is-active", chip.dataset.when === region);
+    });
+  }
+
+  whenChips.forEach(function (chip) {
+    chip.addEventListener("click", function () {
+      paintMonths(chip.dataset.when);
+    });
+  });
+
+  if (monthRail) paintMonths("europe");
+
+  /* ---------- FAQ accordion ---------- */
+  var faqItems = document.querySelectorAll(".faq-item");
+
+  faqItems.forEach(function (item) {
+    var button = item.querySelector(".faq-q");
+    if (!button) return;
+
+    button.addEventListener("click", function () {
+      var wasOpen = button.getAttribute("aria-expanded") === "true";
+
+      /* one open at a time keeps a long list scannable */
+      faqItems.forEach(function (other) {
+        var otherButton = other.querySelector(".faq-q");
+        if (!otherButton) return;
+        var open = other === item && !wasOpen;
+        other.classList.toggle("is-open", open);
+        otherButton.setAttribute("aria-expanded", String(open));
+      });
+    });
+  });
+
+  /* ---------- dispatch signup ---------- */
+  var dispatchForm = document.getElementById("dispatchForm");
+
+  if (dispatchForm) {
+    var dispatchEmail = document.getElementById("dispatchEmail");
+    var dispatchStatus = document.getElementById("dispatchStatus");
+
+    dispatchForm.addEventListener("submit", function (event) {
+      event.preventDefault();
+      dispatchEmail.classList.remove("is-error");
+
+      if (!validEmail(dispatchEmail.value.trim())) {
+        dispatchEmail.classList.add("is-error");
+        dispatchStatus.classList.add("is-error");
+        dispatchStatus.textContent = "That address does not look complete — try again?";
+        dispatchEmail.focus();
+        return;
+      }
+
+      dispatchStatus.classList.remove("is-error");
+      dispatchStatus.textContent = "You're on the list. The next dispatch goes out at the start of the month.";
+      dispatchForm.reset();
     });
   }
 
