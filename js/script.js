@@ -8,27 +8,38 @@
 
   var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  /* ---------- header state ---------- */
+  /* ---------- header state + scroll progress ---------- */
   var header = document.getElementById("siteHeader");
-  var lastKnownY = 0;
+  var progressBar = document.getElementById("scrollProgress");
+  var scrollMax = 0;
   var ticking = false;
 
-  function syncHeader() {
+  function measureScroll() {
+    scrollMax = document.documentElement.scrollHeight - window.innerHeight;
+  }
+
+  function syncScroll() {
     header.classList.toggle("is-stuck", window.scrollY > 40);
+    if (progressBar) {
+      var ratio = scrollMax > 0 ? Math.min(window.scrollY / scrollMax, 1) : 0;
+      progressBar.style.transform = "scaleX(" + ratio + ")";
+    }
     ticking = false;
   }
+
   window.addEventListener(
     "scroll",
     function () {
-      lastKnownY = window.scrollY;
       if (!ticking) {
-        window.requestAnimationFrame(syncHeader);
+        window.requestAnimationFrame(syncScroll);
         ticking = true;
       }
     },
     { passive: true }
   );
-  syncHeader();
+  window.addEventListener("resize", measureScroll, { passive: true });
+  measureScroll();
+  syncScroll();
 
   /* ---------- mobile navigation ---------- */
   var navToggle = document.getElementById("navToggle");
@@ -128,6 +139,7 @@
     });
 
     emptyState.hidden = shown !== 0;
+    measureScroll(); /* the grid just changed height */
 
     if (announce) {
       var season = document.getElementById("season").value;
@@ -264,6 +276,19 @@
       planForm.reset();
     }, 700);
   });
+
+  /* ---------- cursor-tracked highlight on glass cards ---------- */
+  var spotlightCards = document.querySelectorAll(".dest-card, .journey, .voice");
+
+  if (!reduceMotion && window.matchMedia("(hover: hover)").matches) {
+    spotlightCards.forEach(function (card) {
+      card.addEventListener("pointermove", function (event) {
+        var box = card.getBoundingClientRect();
+        card.style.setProperty("--mx", ((event.clientX - box.left) / box.width) * 100 + "%");
+        card.style.setProperty("--my", ((event.clientY - box.top) / box.height) * 100 + "%");
+      });
+    });
+  }
 
   /* ---------- footer year ---------- */
   document.getElementById("year").textContent = String(new Date().getFullYear());
