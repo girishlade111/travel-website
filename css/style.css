@@ -678,7 +678,9 @@ section[id] { scroll-margin-top: 96px; }
 /* cursor-tracked highlight (see script.js) */
 .dest-card::after,
 .journey::after,
-.voice::after {
+.voice::after,
+.planner::after,
+.note-card::after {
   content: "";
   position: absolute; inset: 0;
   pointer-events: none;
@@ -689,7 +691,9 @@ section[id] { scroll-margin-top: 96px; }
 }
 .dest-card:hover::after,
 .journey:hover::after,
-.voice:hover::after { opacity: 1; }
+.voice:hover::after,
+.planner:hover::after,
+.note-card:hover::after { opacity: 1; }
 
 .dest-card:hover {
   transform: translateY(-8px);
