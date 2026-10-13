@@ -41,7 +41,9 @@
   }
 
   function syncRail(ratio) {
-    if (routeLine) routeLine.style.setProperty("--drawn", ratio.toFixed(4));
+    /* the route always shows a seed of itself at the top, so the spine reads as
+       drawn from the first viewport rather than appearing only once you scroll */
+    if (routeLine) routeLine.style.setProperty("--drawn", (0.05 + ratio * 0.95).toFixed(4));
     if (railNode) railNode.style.top = (ratio * 100).toFixed(3) + "%";
 
     var probe = window.scrollY + window.innerHeight * 0.38;

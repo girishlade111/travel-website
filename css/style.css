@@ -73,6 +73,8 @@ html {
   background: var(--void);
   overflow-x: hidden;
   overflow-x: clip;
+  scrollbar-color: #4B3FA8 #06070F;
+  scrollbar-width: thin;
 }
 
 body {
@@ -455,7 +457,7 @@ html:not(.no-js) .reveal.is-in {
 
 .hero-lede {
   margin: 1.6rem 0 0;
-  max-width: 44ch;
+  max-width: 52ch;
   color: var(--text-dim);
   font-size: 1.0625rem;
   line-height: 1.6;
