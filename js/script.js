@@ -8,22 +8,63 @@
 
   var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  /* ---------- header state + scroll progress ---------- */
+  /* ---------- header state + the route spine ---------- */
   var header = document.getElementById("siteHeader");
-  var progressBar = document.getElementById("scrollProgress");
+  var routeLine = document.getElementById("routeDrawn");
+  var railNode = document.getElementById("railNode");
+  var railReadout = document.getElementById("railReadout");
   var scrollMax = 0;
   var ticking = false;
+
+  /* short, legible labels for the fixed rail readout */
+  var RAIL_LEGS = {
+    top:          ["ORIGIN", "MERIDIAN & CO."],
+    destinations: ["WAYPOINT 02", "WHERE WE GO"],
+    journeys:     ["WAYPOINT 03", "DEPARTING SOON"],
+    process:      ["WAYPOINT 04", "HOW IT WORKS"],
+    when:         ["WAYPOINT 05", "TIMING"],
+    voices:       ["WAYPOINT 06", "TRAVELLERS"],
+    planners:     ["WAYPOINT 07", "THE STUDIO"],
+    practical:    ["WAYPOINT 08", "PRACTICALITIES"],
+    notes:        ["WAYPOINT 09", "FIELD NOTES"],
+    faq:          ["WAYPOINT 10", "QUESTIONS"],
+    plan:         ["TERMINUS", "TRIP BRIEF"]
+  };
+
+  var railSections = Array.prototype.slice.call(
+    document.querySelectorAll("main section[id]")
+  );
+  var activeLeg = null;
 
   function measureScroll() {
     scrollMax = document.documentElement.scrollHeight - window.innerHeight;
   }
 
+  function syncRail(ratio) {
+    if (routeLine) routeLine.style.setProperty("--drawn", ratio.toFixed(4));
+    if (railNode) railNode.style.top = (ratio * 100).toFixed(3) + "%";
+
+    var probe = window.scrollY + window.innerHeight * 0.38;
+    var currentId = "top";
+
+    railSections.forEach(function (section) {
+      var top = section.getBoundingClientRect().top + window.scrollY;
+      if (top <= probe) currentId = section.id;
+    });
+
+    if (currentId === activeLeg) return;
+    activeLeg = currentId;
+
+    var leg = RAIL_LEGS[currentId];
+    if (leg && railReadout) {
+      railReadout.innerHTML = "ROUTE · <b>" + leg[0] + "</b> · " + leg[1];
+    }
+  }
+
   function syncScroll() {
     header.classList.toggle("is-stuck", window.scrollY > 40);
-    if (progressBar) {
-      var ratio = scrollMax > 0 ? Math.min(window.scrollY / scrollMax, 1) : 0;
-      progressBar.style.transform = "scaleX(" + ratio + ")";
-    }
+    var ratio = scrollMax > 0 ? Math.min(window.scrollY / scrollMax, 1) : 0;
+    syncRail(ratio);
     ticking = false;
   }
 
@@ -87,6 +128,39 @@
     revealables.forEach(function (el) {
       revealObserver.observe(el);
     });
+
+    /* safety net: nothing on screen may be left invisible if the observer
+       is unavailable or throws, whatever it does below the fold */
+    window.setTimeout(function () {
+      revealables.forEach(function (el) {
+        var box = el.getBoundingClientRect();
+        var onScreen = box.top < window.innerHeight && box.bottom > 0;
+        if (onScreen) el.classList.add("is-in");
+      });
+    }, 1200);
+  }
+
+  /* ---------- route ticker: duplicate the group for a seamless loop ---------- */
+  var tickerGroup = document.querySelector(".ticker-group");
+  var ticker = document.querySelector(".ticker");
+
+  if (tickerGroup && !reduceMotion) {
+    var clone = tickerGroup.cloneNode(true);
+    clone.setAttribute("aria-hidden", "true");
+    tickerGroup.parentNode.appendChild(clone);
+
+    /* it only moves while someone is actually looking at it */
+    if (ticker && "IntersectionObserver" in window) {
+      var tickerObserver = new IntersectionObserver(
+        function (entries) {
+          entries.forEach(function (entry) {
+            ticker.classList.toggle("is-paused", !entry.isIntersecting);
+          });
+        },
+        { threshold: 0 }
+      );
+      tickerObserver.observe(ticker);
+    }
   }
 
   /* ---------- boarding pass: tabs + search ---------- */

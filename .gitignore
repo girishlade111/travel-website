@@ -30,3 +30,6 @@ coverage/
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# ---------- tool scratch (design review screenshots, mocks) ----------
+.impeccable/
